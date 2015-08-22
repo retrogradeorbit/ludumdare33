@@ -6,7 +6,10 @@
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "0.0-3297"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+
+                 [infinitelives.pixi/infinitelives.pixi "0.1.0-SNAPSHOT"]
+                 ]
 
   :plugins [[lein-cljsbuild "1.0.5"]
             [lein-figwheel "0.3.5"]]
@@ -25,23 +28,41 @@
                          :asset-path "js/compiled/out"
                          :output-to "resources/public/js/compiled/ludumdare33.js"
                          :output-dir "resources/public/js/compiled/out"
-                         :source-map-timestamp true }}
+                         :source-map-timestamp true
+
+
+                         ;; pixi uses techniques incompatible with
+                         ;; google closure optimisation, so we preserve
+                         ;; its namespace
+                         :externs ["src/js/pixi-externs.js"]
+                         :foreign-libs
+                         [{:file "https://raw.githubusercontent.com/pixijs/pixi.js/v2.2.9/bin/pixi.js"
+                           :provides ["PIXI"]}]
+ }}
              {:id "min"
               :source-paths ["src"]
               :compiler {:output-to "resources/public/js/compiled/ludumdare33.js"
                          :main ludumdare33.core
                          :optimizations :advanced
-                         :pretty-print false}}]}
+                         :pretty-print false
+
+                         ;; pixi uses techniques incompatible with
+                         ;; google closure optimisation, so we preserve
+                         ;; its namespace
+                         :externs ["src/js/pixi-externs.js"]
+                         :foreign-libs
+                         [{:file "https://raw.githubusercontent.com/pixijs/pixi.js/v2.2.9/bin/pixi.js"
+                           :provides ["PIXI"]}]}}]}
 
   :figwheel {
-             ;; :http-server-root "public" ;; default and assumes "resources" 
+             ;; :http-server-root "public" ;; default and assumes "resources"
              ;; :server-port 3449 ;; default
-             ;; :server-ip "127.0.0.1" 
+             ;; :server-ip "127.0.0.1"
 
              :css-dirs ["resources/public/css"] ;; watch and update CSS
 
              ;; Start an nREPL server into the running figwheel process
-             ;; :nrepl-port 7888
+             :nrepl-port 7888
 
              ;; Server Ring Handler (optional)
              ;; if you want to embed a ring handler into the figwheel http-kit
@@ -56,11 +77,11 @@
              ;; #! /bin/sh
              ;; emacsclient -n +$2 $1
              ;;
-             ;; :open-file-command "myfile-opener"
+             :open-file-command "figwheel-opener"
 
              ;; if you want to disable the REPL
              ;; :repl false
 
              ;; to configure a different figwheel logfile path
-             ;; :server-logfile "tmp/logs/figwheel-logfile.log" 
+             ;; :server-logfile "tmp/logs/figwheel-logfile.log"
              })
