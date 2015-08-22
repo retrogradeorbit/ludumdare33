@@ -225,27 +225,10 @@
                                             10
                                             ))
 
-                           (+ n (vec2/magnitude vel))))
-                  )
+                           (+ n (vec2/magnitude vel)))))
 
                 (<! (resources/fadeout player :duration 0.5)))
-
-
-
-
-
-
-
-              (<! (events/wait-time 200000)))
-
-            ))
-
-
-      )
-
-    ))
-
-
+              (<! (events/wait-time 200000))))))))
 
 
 (defonce _ (main))
