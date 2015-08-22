@@ -28,20 +28,6 @@
 (defmacro with-sprite-set [canvas layer bindings & body]
   (assert-args
    (vector? bindings) "a vector for its binding"
-   (even? (count bindings)) "an even number of forms in bin
-ing vector")
-
-  (if (pos? (count bindings))
-    (let [symb (first bindings) val (second bindings)]
-      `(let [~symb ~val]
-         (.addChild (get-layer ~canvas ~layer) ~symb)
-         (with-sprite ~canvas ~layer ~(subvec bindings 2) ~@body)
-         (.removeChild (get-layer ~canvas ~layer) ~symb)))
-    `(do ~@body)))
-
-(defmacro with-sprite-set [canvas layer bindings & body]
-  (assert-args
-   (vector? bindings) "a vector for its binding"
    (even? (count bindings)) "an even number of forms in binding vector")
 
   (if (pos? (count bindings))
