@@ -43,18 +43,28 @@
                ;(log "frame")
                ((:render-fn canvas)))))
 
-(def player-run-anim-delay 10)
+(def player-run-anim-delay 7)
 
 (def player-frames
   [[[128 8] [128 40] [128 72] [128 104]]
-   [[168 8] [168 40] [168 72] [168 104]]])
+   [[168 8] [168 40] [168 72] [168 104]]
+   [[208 8] [208 40] [208 72] [208 104]]])
 
-(def props
+(def game-props
   {
    :tree1 [[72 120] [48 48]]
-   :tree2 [[160 152] [64 104]]})
+   :tree2 [[160 152] [64 104]]
+   :rock [[16 160] [8 8]]
+   :rock2 [[24 160] [16 8]]
+   :grass1 [[16 168] [8 8]]
+   :grass2 [[24 168] [8 8]]
+   :grass3 [[32 168] [8 8]]
+   :grass4 [[40 168] [8 8]]
+   :grass5 [[48 168] [8 8]]
+   :grass6 [[56 168] [8 8]]
+   })
 
-(def level
+#_ (def level
   [
    [:tree1 [-30 30]]
    [:tree1 [100 100]]
@@ -62,6 +72,45 @@
    [:tree2 [-150 -400]]
    [:tree2 [-100 34]]
    ])
+
+(def abundance
+  {
+   :grass1 100
+   :grass2 300
+   :grass3 300
+   :grass4 400
+   :grass5 500
+   :grass6 500
+
+   :rock 200
+   :rock2 20
+   :tree1 10
+   :tree2 50})
+
+(def level
+  (into []
+        (apply concat (for [[prop num] abundance]
+                   (take num (repeatedly (fn [] [prop [(math/rand-between -10000 10000)
+                                                       (math/rand-between -1000 1000)]])))
+                   ))))
+
+
+(println "LEVEL:")
+(println level)
+
+(defn make-prop-texture-lookup [props]
+  (let [spritesheet (resources/get-texture :sprites :nearest)]
+    (into {}
+          (for [[prop-name [pos size]] props]
+            [prop-name
+             (texture/sub-texture spritesheet pos size)]))))
+
+
+(defn depth-compare [a b]
+  (cond
+    (< (.-position.y a) (.-position.y b)) -1
+    (< (.-position.y b) (.-position.y a)) 1
+    :default 0))
 
 (defn main []
   (go
@@ -82,40 +131,51 @@
           topleft (player-frames 0)
           running (map
                    #(texture/sub-texture spritesheet
-                                           %
-                                           [24 24])
+                                         %
+                                         [24 24])
                    topleft)]
 
-      (go
-        (macros/with-sprite canvas :world
-          [spr (sprite/make-sprite (first running) :scale scale
-                                   :xhandle 0.5 :yhandle 1.0)]
 
-          (<! (resources/fadein spr :duration 0.5))
+      (go (let [props (make-prop-texture-lookup game-props)]
+            (macros/with-sprite-set canvas :world
+              [sprites (doall (for [[prop [x y]] level]
+                                (sprite/make-sprite (prop props)
+                                                    :x x :y y
+                                                    :scale scale
+                                                    :xhandle 0.5 :yhandle 1.0)))]
+                                        ;(log "!" (last sprites))
+              (macros/with-sprite canvas :world
+                [player (sprite/make-sprite (first running) :scale scale
+                                         :xhandle 0.5 :yhandle 0.9)]
 
-          (loop [n 0]
-            (log spr)
-            (sprite/set-texture! spr (nth running (mod n (count running))))
-            (<! (events/wait-frames player-run-anim-delay))
-            (recur (inc n)))
+                (<! (resources/fadein player :duration 0.5))
 
-          (<! (events/wait-time 10000))
-          (<! (resources/fadeout spr :duration 0.5))))
+                #_ (loop [n 0]
+                  (sprite/set-texture! spr (nth running (mod n (count running))))
+                  (<! (events/wait-frames player-run-anim-delay))
+                  (recur (inc n)))
+
+                (loop [[x y] [0 0] n 0]
+                  (sprite/set-pivot! (-> canvas :layer :world) (* 6 x) y)
+                  (sprite/set-pos! player (* 6 x) y)
+                  (sprite/set-texture! player (nth running (mod (int (* 0.18 n)) (count running))))
+
+                  (.sort (.-children (-> canvas :layer :world)) depth-compare )
+                  (<! (events/next-frame))
+                  (recur [(dec x) y] (inc n))
+                  )
+
+                (<! (resources/fadeout player :duration 0.5)))
 
 
-      (go (macros/with-sprite canvas :world
-            [tree (sprite/make-sprite
-                   (texture/sub-texture spritesheet [72 120] [48 48])
-                   :x -80 :y 30 :scale scale
-                   :xhandle 0.5 :yhandle 1.0)]
-            (<! (events/wait-time 10000))))
 
-      (macros/with-sprite canvas :world
-        [tree (sprite/make-sprite
-               (texture/sub-texture spritesheet [160 152] [64 104])
-               :x 300 :y -200 :scale scale
-               :xhandle 0.5 :yhandle 1.0)]
-        (<! (events/wait-time 10000)))
+
+
+
+
+              (<! (events/wait-time 200000)))
+
+            ))
 
 
       )
