@@ -178,75 +178,83 @@
                                                   :scale scale
                                                   :xhandle 0.5 :yhandle 1.0)))]
                                         ;(log "!" (last sprites))
-              (macros/with-sprite canvas :world
-                [player (sprite/make-sprite (-> player-tex :left first) :scale scale
-                                         :xhandle 0.5 :yhandle 0.9)]
 
-                (<! (resources/fadein player :duration 0.5))
+            ;; make player
+            (macros/with-sprite canvas :world
+              [player (sprite/make-sprite (-> player-tex :left first) :scale scale
+                                          :xhandle 0.5 :yhandle 0.9)]
 
-                #_ (loop [n 0]
-                  (sprite/set-texture! spr (nth running (mod n (count running))))
-                  (<! (events/wait-frames player-run-anim-delay))
-                  (recur (inc n)))
+              (<! (resources/fadein player :duration 0.5))
 
-                (loop [pos (vec2/zero)
-                       vel (vec2/vec2 -6 0)
-                       n 0]
-                  (let [next-pos (vec2/add pos vel)
-                        x (aget next-pos 0)
-                        y (aget next-pos 1)]
+              ;; spawn a sheep
+              (go
 
-                    (sprite/set-pivot! (-> canvas :layer :world)  x y)
-                    (sprite/set-pos! player x y)
+                (macros/with-sprite canvas :world
+                    [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
+                                              :scale scale
+                                              :xhandle 0.5
+                                              :yhandle 1.0)]
+
+                    (<! (events/wait-time 100000))))
+
+              ;; run game
+              (loop [pos (vec2/zero)
+                     vel (vec2/vec2 -6 0)
+                     n 0]
+                (let [next-pos (vec2/add pos vel)
+                      x (aget next-pos 0)
+                      y (aget next-pos 1)]
+
+                  (sprite/set-pivot! (-> canvas :layer :world)  x y)
+                  (sprite/set-pos! player x y)
+
+                  ;; set animation frame
+                  (let [
+                        pi Math/PI
+                        pi-on-4 (/ pi 4)
+                        pi-on-8 (/ pi 8)
+                        head (vec2/heading vel)
+                        section
+                        (int (/ (+ pi-on-8 head) pi-on-4))
+                        frame
+                        ([:right :down-right :down :down-left
+                          :left :up-left :up :up-right :right]
+                         section)
 
 
+                        ]
+                    (sprite/set-texture! player (nth
+                                                 (-> player-tex frame)
+                                                 (mod (int (* 0.02 n)) (-> player-tex frame count)))))
 
-                    ;; set animation frame
-                    ;
-                    (let [
-                          pi Math/PI
-                          pi-on-4 (/ pi 4)
-                          pi-on-8 (/ pi 8)
-                          head (vec2/heading vel)
-                          section
-                          (int (/ (+ pi-on-8 head) pi-on-4))
-                          frame
-                          ([:right :down-right :down :down-left
-                            :left :up-left :up :up-right :right]
-                           section)
+                  (.sort (.-children (-> canvas :layer :world)) depth-compare )
+                  (<! (events/next-frame))
+                  (recur next-pos
 
+                         ;;cursor keys
+                         (let [x (if (events/is-pressed? :left)
+                                   -1 (if (events/is-pressed? :right)
+                                        1
+                                        0))
+                               y (if (events/is-pressed? :up)
+                                   -1 (if (events/is-pressed? :down) 1 0))]
+                           (->
+                            ;; players acceleration vector
+                            (if (and (= x 0) (= y 0))
+                              (vec2/vec2 x y)
+                              (vec2/scale (vec2/unit (vec2/vec2 x y))
+                                          1.5))
 
-                          ]
-                      (sprite/set-texture! player (nth
-                                                   (-> player-tex frame)
-                                                   (mod (int (* 0.02 n)) (-> player-tex frame count)))))
+                            ;; add to old velocity
+                            (vec2/add (vec2/scale vel 0.98))
 
-                    (.sort (.-children (-> canvas :layer :world)) depth-compare )
-                    (<! (events/next-frame))
-                    (recur next-pos
+                            ;; maximum velocity
+                            (vec2/truncate 10)))
 
-                           ;;cursor keys
-                           (let [x (if (events/is-pressed? :left)
-                                     -1 (if (events/is-pressed? :right)
-                                          1
-                                          0))
-                                 y (if (events/is-pressed? :up)
-                                     -1 (if (events/is-pressed? :down) 1 0))]
-                             (log (vec2/vec2 x y))
-                             (log (vec2/unit (vec2/vec2 x y)))
-                             (vec2/truncate (vec2/add
-                                             (if (and (= x 0) (= y 0))
-                                               (vec2/vec2 x y)
-                                               (vec2/scale (vec2/unit (vec2/vec2 x y))
-                                                           1.5))
-                                             (vec2/scale vel 0.98))
-                                            10
-                                            ))
+                         (+ n (vec2/magnitude vel)))))
 
-                           (+ n (vec2/magnitude vel)))))
-
-                (<! (resources/fadeout player :duration 0.5)))
-              (<! (events/wait-time 200000))))))))
+              (<! (resources/fadeout player :duration 0.5)))
+            (<! (events/wait-time 200000))))))))
 
 
 (defonce _ (main))
