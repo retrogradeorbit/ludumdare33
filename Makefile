@@ -10,16 +10,16 @@ release:
 	cp resources/index.html target/release/
 
 server:
-	cd target/release && python -m SimpleHTTPServer
+	cd resources/public && python -m SimpleHTTPServer
 
 clean:
 	rm -rf target
 
 upload:
-	rsync -av target/release/ www-data@atomsk.procrustes.net:~/marty-funk.procrustes.net/public_html/
+	rsync -av resources/public/ www-data@atomsk.procrustes.net:~/ld33.procrustes.net/public_html/
 
 archive:
-	cd target/release && tar cvzf ../../merty-funk.procrustes.net.tar.gz .
+	cd resources/public && tar cvzf ../../ld33.procrustes.net.tar.gz .
 
 resources/public/img/sprites.png: src/gfx/sprites.png
 	convert src/gfx/sprites.png -alpha On -transparent '#2ec13c' resources/public/img/sprites.png
