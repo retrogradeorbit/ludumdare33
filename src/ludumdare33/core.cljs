@@ -161,16 +161,22 @@
                                                               %
                                                               [24 24])
                                         v))]))
-          ]
-
-
-      (go (let [props (make-prop-texture-lookup game-props)]
-            (macros/with-sprite-set canvas :world
-              [sprites (doall (for [[prop [x y]] level]
-                                (sprite/make-sprite (prop props)
-                                                    :x x :y y
-                                                    :scale scale
-                                                    :xhandle 0.5 :yhandle 1.0)))]
+          sheep-tex (into
+                     {}
+                     (for [[k v] sheep-frames]
+                       [k (into
+                           {}
+                           (for [[kk pos] v]
+                             [kk (texture/sub-texture spritesheet pos [24 16])]))]))]
+      (go
+        (let [props (make-prop-texture-lookup game-props)]
+          ;; make world
+          (macros/with-sprite-set canvas :world
+            [sprites (doall (for [[prop [x y]] level]
+                              (sprite/make-sprite (prop props)
+                                                  :x x :y y
+                                                  :scale scale
+                                                  :xhandle 0.5 :yhandle 1.0)))]
                                         ;(log "!" (last sprites))
               (macros/with-sprite canvas :world
                 [player (sprite/make-sprite (-> player-tex :left first) :scale scale
