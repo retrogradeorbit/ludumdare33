@@ -64,6 +64,27 @@
 
 })
 
+(def sheep-frames
+  {:right
+   {:look-away [192 264]
+    :look-towards [192 288]
+    :stand [192 312]
+    :hop [192 336]
+    :munch1 [192 360]
+    :minch2 [192 384]
+    :dead  [192 408]}
+
+   :left
+   {:look-away [224 264]
+    :look-towards [224 288]
+    :stand [224 312]
+    :hop [224 336]
+    :munch1 [224 360]
+    :minch2 [224 384]
+    :dead  [224 408]}
+   })
+
+
 (def game-props
   {
    :tree1 [[72 120] [48 48]]
@@ -77,15 +98,6 @@
    :grass5 [[48 168] [8 8]]
    :grass6 [[56 168] [8 8]]
    })
-
-#_ (def level
-  [
-   [:tree1 [-30 30]]
-   [:tree1 [100 100]]
-   [:tree1 [250 100]]
-   [:tree2 [-150 -400]]
-   [:tree2 [-100 34]]
-   ])
 
 (def abundance
   {
