@@ -8,7 +8,7 @@
      [infinitelives.pixi.texture :as texture]
      [infinitelives.utils.math :as math]
      [infinitelives.utils.vec2 :as vec2]
-     [cljs.core.async :refer [<!]])
+     [cljs.core.async :refer [<! chan >! close!]])
     (:require-macros
      [cljs.core.async.macros :refer [go]]
      [ludumdare33.macros :as macros]))
@@ -138,6 +138,42 @@
     (< (.-position.y b) (.-position.y a)) 1
     :default 0))
 
+(def bounce-length 120)
+(def bounce-height 40)
+
+(defn bounce-sheep [pos unit]
+  (let [c (chan)
+        time 20]
+    (go
+      (loop [n 0]
+        (let [dest (-> unit
+                       (vec2/scale bounce-length)
+                       (vec2/add pos))
+              travel (vec2/sub dest pos)
+              param (/ n time)
+              across (vec2/scale travel param)
+              parabola (- (* 4 param) (* 4 param param))
+              up (vec2/vec2 0 (- (* bounce-height parabola)))
+              total (vec2/add up across)]
+          (if (<= n time)
+            (do
+              (>! c [(vec2/add pos total)
+                     (if (< (vec2/get-x unit) 0) :left :right)
+                     :hop])
+              (recur (inc n)))
+
+            ;; stand for a bit
+            (do
+              (loop [n 20]
+                (when (pos? n)
+                  (>! c [(vec2/add pos total)
+                         (if (< (vec2/get-x unit) 0) :left :right)
+                         :stand])
+                  (recur (dec n))))
+
+              (close! c))))))
+    c))
+
 (defn main []
   (go
     (<! (resources/load-resources
@@ -182,7 +218,7 @@
             ;; make player
             (macros/with-sprite canvas :world
               [player (sprite/make-sprite (-> player-tex :left first) :scale scale
-                                          :xhandle 0.5 :yhandle 0.9)]
+                                          :xhandle 0.5 :yhandle 0.7)]
 
               (<! (resources/fadein player :duration 0.5))
 
@@ -190,12 +226,24 @@
               (go
 
                 (macros/with-sprite canvas :world
-                    [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
-                                              :scale scale
-                                              :xhandle 0.5
-                                              :yhandle 1.0)]
-
-                    (<! (events/wait-time 100000))))
+                  [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
+                                             :scale scale
+                                             :xhandle 0.5
+                                             :yhandle 1.0)]
+                  (loop [pos (vec2/zero)]
+                    (let [ch (bounce-sheep
+                              pos
+                              (vec2/random-unit)
+                              )]
+                      (recur
+                       (loop [nex (<! ch) pos pos]
+                         (if nex
+                           (let [[pos dir frame] nex]
+                             (sprite/set-pos! sheep pos)
+                             (sprite/set-texture! sheep (-> sheep-tex dir frame))
+                             (<! (events/next-frame))
+                             (recur (<! ch) pos))
+                           pos)))))))
 
               ;; run game
               (loop [pos (vec2/zero)
