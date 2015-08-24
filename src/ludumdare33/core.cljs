@@ -174,6 +174,8 @@
               (close! c))))))
     c))
 
+(defonce player-atom (atom {:pos (vec2/zero)}))
+
 (defn main []
   (go
     (<! (resources/load-resources
@@ -212,7 +214,7 @@
                               (sprite/make-sprite (prop props)
                                                   :x x :y y
                                                   :scale scale
-                                                  :xhandle 0.5 :yhandle 1.0)))]
+                                                  :xhandle 0.5 :yhandle 0.9)))]
                                         ;(log "!" (last sprites))
 
             ;; make player
@@ -222,28 +224,46 @@
 
               (<! (resources/fadein player :duration 0.5))
 
-              ;; spawn a sheep
-              (go
+              (go (dotimes [n 10]
+                    (<! (events/wait-time 200))
 
-                (macros/with-sprite canvas :world
-                  [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
-                                             :scale scale
-                                             :xhandle 0.5
-                                             :yhandle 1.0)]
-                  (loop [pos (vec2/zero)]
-                    (let [ch (bounce-sheep
-                              pos
-                              (vec2/random-unit)
-                              )]
-                      (recur
-                       (loop [nex (<! ch) pos pos]
-                         (if nex
-                           (let [[pos dir frame] nex]
-                             (sprite/set-pos! sheep pos)
-                             (sprite/set-texture! sheep (-> sheep-tex dir frame))
-                             (<! (events/next-frame))
-                             (recur (<! ch) pos))
-                           pos)))))))
+                    ;; spawn a sheep
+                    (go
+
+                      (macros/with-sprite canvas :world
+                        [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
+                                                   :scale scale
+                                                   :xhandle 0.5
+                                                   :yhandle 1.0)]
+                        (loop [[pos alive] [(vec2/zero) true]]
+                          (when alive
+                            (let [ch (bounce-sheep
+                                      pos
+                                      (vec2/random-unit)
+                                      )]
+                              (recur
+                               (loop [nex (<! ch) pos pos]
+                                 (if nex
+                                   (let [[pos dir frame] nex]
+                                     (sprite/set-pos! sheep pos)
+                                     (sprite/set-texture! sheep (-> sheep-tex dir frame))
+                                     (<! (events/next-frame))
+
+                                     ;; collision with player?
+                                     (when
+                                         (<
+                                          (vec2/distance pos (:pos @player-atom))
+                                          20)
+                                       (log "Sheep caught")
+                                       (sprite/set-texture! sheep (-> sheep-tex dir :dead))
+                                       (swap! player-atom assoc :eating sheep)
+                                       (<! (events/wait-time 10000))
+                                       (<! (resources/fadeout sheep :duration 60))
+                                       [pos false])
+
+
+                                     (recur (<! ch) pos))
+                                   [pos true]))))))))))
 
               ;; run game
               (loop [pos (vec2/zero)
@@ -253,8 +273,15 @@
                       x (aget next-pos 0)
                       y (aget next-pos 1)]
 
+                  (when (:eating @player-atom)
+                    ;; eating
+                    (<! (events/wait-time 1000))
+                    (swap! player-atom dissoc :eating)
+                    (recur pos (vec2/zero) n))
+
                   (sprite/set-pivot! (-> canvas :layer :world)  x y)
                   (sprite/set-pos! player x y)
+                  (swap! player-atom assoc :pos (vec2/vec2 x y))
 
                   ;; set animation frame
                   (let [
