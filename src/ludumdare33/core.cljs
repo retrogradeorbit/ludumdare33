@@ -206,11 +206,72 @@
     :default 0
     ))
 
+(defn spawn-sheep [sheep-tex sfx-cute sfx-growl]
+  (go
+
+    (macros/with-sprite canvas :world
+      [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
+                                 :scale scale
+                                 :xhandle 0.5
+                                 :yhandle 0.9)]
+      (swap! sheep-atom conj sheep)
+      (loop [[pos alive] [(vec2/scale (vec2/random) 3000) true]]
+        (when alive
+          (let [ch (bounce-sheep
+                    pos
+                    (vec2/random-unit)
+                    )]
+
+            ;; sfx
+            (let [distance (vec2/distance (:pos @player-atom) pos)]
+              (sound/play-sound (rand-nth sfx-cute) (min (/ 30. distance) 0.5) false))
+
+            (recur
+             (loop [nex (<! ch) pos pos]
+               (if nex
+
+                 (let [[pos dir frame] nex]
+                   (sprite/set-pos! sheep pos)
+                   (sprite/set-texture! sheep (-> sheep-tex dir frame))
+                   (<! (events/next-frame))
+
+                   ;; collision with player?
+                   (when
+                       (<
+                        (vec2/distance pos (:pos @player-atom))
+                        20)
+                     (log "Sheep caught")
+
+                     (sound/play-sound sfx-growl 0.7 false)
+                     (swap! player-atom update-in [:kills] inc)
+
+                     (swap! sheep-atom disj sheep)
+                     (sprite/set-texture! sheep (-> sheep-tex dir :dead))
+                     (swap! player-atom update-in [:eating] inc)
+                     (<! (events/wait-time 10000))
+                     (<! (resources/fadeout sheep :duration 60))
+                     (spawn-sheep sheep-tex sfx-cute sfx-growl)
+                     [pos false])
+
+
+                   (recur (<! ch) pos))
+                 [pos true]))))))
+
+      )))
+
 (defn main []
   (go
     (<! (resources/load-resources
          (-> canvas :layer :ui)
-         ["img/sprites.png"]
+         ["img/sprites.png"
+          "sfx/ld33.ogg"
+          "sfx/cute.ogg"
+          "sfx/weep.ogg"
+          "sfx/weep2.ogg"
+          "sfx/weep3.ogg"
+          "sfx/growl.ogg"
+          "http://fonts.gstatic.com/s/amaticsc/v7/DPPfSFKxRTXvae2bKDzp5FtXRa8TVwTICgirnJhmVJw.woff2"
+          ]
          :full-colour 0x6ecb64          ;0x005217
          :highlight 0x6ecb64
          :lowlight 0x0f7823
