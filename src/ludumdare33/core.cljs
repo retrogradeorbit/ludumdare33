@@ -159,7 +159,7 @@
 
 (def bounce-length 120)
 (def bounce-height 40)
-
+(def num-sheep-start 10)
 (defn bounce-sheep [pos unit]
   (let [c (chan)
         time 20]
@@ -194,7 +194,8 @@
     c))
 
 (defonce player-atom (atom {:pos (vec2/zero)
-                            :eating 0}))
+                            :eating 0
+                            :kills 0}))
 
 (defonce sheep-atom (atom #{}))
 
