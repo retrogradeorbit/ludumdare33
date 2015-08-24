@@ -90,10 +90,18 @@
     3 [245 336]}
    }
 
-
   )
 
-
+(def arrows
+  {:left [296 256]
+   :down [296 280]
+   :right [296 304]
+   :up [296 328]
+   :up-left [320 256]
+   :down-left [320 280]
+   :down-right [320 304]
+   :up-right [320 328]
+   })
 
 (def game-props
   {
@@ -211,6 +219,10 @@
                                                               %
                                                               [24 24])
                                         v))]))
+          arrow-tex (into {}
+                          (for [[k v] arrows]
+                            [k (texture/sub-texture spritesheet v [24 24])]))
+
           sheep-tex (into
                      {}
                      (for [[k v] sheep-frames]
@@ -233,6 +245,80 @@
             (macros/with-sprite canvas :world
               [player (sprite/make-sprite (-> player-tex :left first) :scale scale
                                           :xhandle 0.5 :yhandle 0.8)]
+
+              ;; HUD arrow go block
+              (go
+                (macros/with-sprite canvas :ui
+                  [arrow (sprite/make-sprite
+                          (-> arrow-tex :left)
+                          :scale scale
+                          :xhandle 0.5
+                          :yhandle 0.5
+                          :x 100
+                          :y 100
+                          )]
+
+                  (loop []
+                    (let [disp (vec2/sub (vec2/zero) (:pos @player-atom))
+                          sw (.-innerWidth js/window)
+                          sh (.-innerHeight js/window)
+                          hw (/ sw 2)
+                          hh (/ sh 2)
+                          x (vec2/get-x disp)
+                          y (vec2/get-y disp)
+                          sector
+                          (if (> x hw)
+                            ;;right
+                            (if (> y hh)
+                              :bottom-right
+                              (if (< y (- hh))
+                                :top-right
+                                :right))
+
+                            (if (< x (- hw))
+                              ;; left
+                              (if (> y hh)
+                                :bottom-left
+                                (if (< y (- hh))
+                                  :top-left
+                                  :left))
+
+                              ;;above/below
+                              (if (> y hh)
+                                :bottom
+                                (if (< y (- hh))
+                                  :top
+                                  :onscreen))))
+                          buff 24
+                          ]
+                      (case sector
+                        :top-right
+                        (do (sprite/set-pos! arrow (vec2/vec2 (- hw buff) (- buff hh)))
+                            (sprite/set-texture! arrow (-> arrow-tex :up-right)))
+
+                        :top-left
+                        (do (sprite/set-pos! arrow (vec2/vec2 (- buff hw) (- buff hh)))
+                            (sprite/set-texture! arrow (-> arrow-tex :up-left)))
+
+
+                        :bottom-left
+                        (do (sprite/set-pos! arrow (vec2/vec2 (- buff hw) (- hh buff)))
+                            (sprite/set-texture! arrow (-> arrow-tex :down-left)))
+
+                        :bottom-right
+                        (do (sprite/set-pos! arrow (vec2/vec2 (- hw buff) (- hh buff)))
+                            (sprite/set-texture! arrow (-> arrow-tex :down-right)))
+
+                        :left
+                        (do (sprite/set-pos! arrow (-> disp vec2/unit (vec2/scale hw) (vec2/add (vec2/vec2 buff 0))))
+                            (sprite/set-texture! arrow (-> arrow-tex :left)))
+
+
+                        (sprite/set-pos! arrow disp))
+                      (log (str sector))
+                      )
+                    (<! (events/next-frame))
+                    (recur))))
 
               (<! (resources/fadein player :duration 0.5))
 
@@ -313,7 +399,7 @@
                       ;;
                       ;; eating
                       ;;
-                      ;(sprite/set-pos! player (vec2/sub (vec2/vec2 x y) (vec2/zero))
+                                        ;(sprite/set-pos! player (vec2/sub (vec2/vec2 x y) (vec2/zero))
 
                       (loop [n 10]
                         (go
@@ -341,7 +427,7 @@
 
 
 
-                      ;(<! (events/wait-time 1000))
+                                        ;(<! (events/wait-time 1000))
                       (swap! player-atom update-in [:eating] dec)
                       (recur (vec2/vec2 x y) (vec2/scale (vec2/unit vel) 0.2) n))
 
