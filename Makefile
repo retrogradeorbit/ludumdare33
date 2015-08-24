@@ -26,8 +26,8 @@ resources/public/img/sprites.png: src/gfx/sprites.png
 
 images: resources/public/img/sprites.png
 
-sfx: src/sfx/gong.wav
+sfx:
 	cd src/sfx && oggenc *.wav
 
-	#-mkdir resources/public/sfx/
+	-mkdir resources/public/sfx/
 	cp src/sfx/*.ogg resources/public/sfx/
