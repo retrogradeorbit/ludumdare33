@@ -144,8 +144,6 @@
 (def bounce-length 120)
 (def bounce-height 40)
 
-(def sheep-atom (atom #{}))
-
 (defn bounce-sheep [pos unit]
   (let [c (chan)
         time 20]
@@ -339,11 +337,8 @@
                                              (nth (-> player-tex frame) 5))
                         (<! (events/wait-time (math/rand-between 100 400)))
                         (when (pos? n)
-                          (recur (dec n)))
+                          (recur (dec n))))
 
-
-
-)
 
 
                       ;(<! (events/wait-time 1000))
