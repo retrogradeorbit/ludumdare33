@@ -396,7 +396,7 @@
                                    (let [msd
                                          (first (sort-by first (for [sh sheep-pos] [(vec2/distance player-pos sh) sh])))
                                          [dist spos] msd
-                                        ]
+                                         ]
                                      (vec2/sub (second msd) player-pos))))
                           sw (.-innerWidth js/window)
                           sh (.-innerHeight js/window)
