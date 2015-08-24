@@ -121,6 +121,7 @@
    :grass4 [[40 168] [8 8]]
    :grass5 [[48 168] [8 8]]
    :grass6 [[56 168] [8 8]]
+   :flower [[8 192] [24 24]]
    })
 
 (def abundance
@@ -131,6 +132,7 @@
    :grass4 1000
    :grass5 1000
    :grass6 1000
+   :flower 100
 
    :rock 200
    :rock2 200
