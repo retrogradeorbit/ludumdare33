@@ -282,7 +282,35 @@
          :fade-in 0.2
          :fade-out 0.5))
 
+    (go (let [tune (<! (sound/load-sound "/sfx/ld33.ogg"))
+              [source gain] (sound/play-sound tune 0.4 true)
+              ])
+        )
+
     (let [spritesheet (resources/get-texture :sprites :nearest)
+          sfx-growl (<! (sound/load-sound "/sfx/growl.ogg"))
+          sfx-cute [(<! (sound/load-sound "/sfx/bounce.ogg"))
+                    (<! (sound/load-sound "/sfx/bounce2.ogg"))
+                    (<! (sound/load-sound "/sfx/bounce3.ogg"))
+                    (<! (sound/load-sound "/sfx/bounce4.ogg"))]
+          myfont (font/make-tiled-font "Amatic SC" 400 50)
+          tspr1 (font/make-text "400 50px Amatic SC"
+                                "Some test text"
+                                :weight 400 :fill "#ffffff"
+                                :dropShadow true
+                                :dropShadowColor "#000000"
+                                :dropShadowDistance 1)
+          tspr2 (font/make-text "400 50px Amatic SC"
+                                "Some test text"
+                                :weight 400 :fill "#ffffff"
+                                :dropShadow true
+                                :dropShadowColor "#000000"
+                                :dropShadowDistance 1)
+          _ (sprite/set-pos! tspr1 -100000 1000000)
+          _ (.addChild (-> canvas :layer :world) tspr1)
+          delay (<! (timeout 500))
+
+
           player-tex (into {}
                            (for [[k v] player-frames]
                              [k (doall (map
@@ -301,6 +329,30 @@
                            {}
                            (for [[kk pos] v]
                              [kk (texture/sub-texture spritesheet pos [24 16])]))]))]
+
+      (go (loop []
+            (macros/with-sprite canvas :ui
+
+              [text
+               (font/make-text "400 50px Amatic SC"
+                               (str (:kills @player-atom))
+                               :weight 400 :fill "#ffffff"
+                               :dropShadow true
+                               :dropShadowColor "#000000"
+                               :dropShadowDistance 1
+                               :x (-> js/window .-innerWidth (/ 2) (- 100))
+                               :y (-> js/window .-innerHeight (/ 2) (- 100))
+                              )]
+              (sprite/set-scale! text 2)
+              (loop []
+                (let [kills (:kills @player-atom)]
+                  (.setText text (str kills))
+                  (sprite/set-pos! text
+                                   (-> js/window .-innerWidth (/ 2) (- 100))
+                                   (-> js/window .-innerHeight (/ 2) (- 100)))
+                  (<! (events/wait-time 100))
+                  (recur))))))
+
       (go
         (let [props (make-prop-texture-lookup game-props)]
           ;; make world
