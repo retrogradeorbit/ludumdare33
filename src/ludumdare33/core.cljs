@@ -8,12 +8,18 @@
      [infinitelives.pixi.texture :as texture]
      [infinitelives.utils.math :as math]
      [infinitelives.utils.vec2 :as vec2]
-     [cljs.core.async :refer [<! chan >! close!]])
+     [ludumdare33.sound :as sound]
+     [ludumdare33.font :as font]
+     [cljs.core.async :refer [<! chan >! close! timeout]])
     (:require-macros
      [cljs.core.async.macros :refer [go]]
      [ludumdare33.macros :as macros]))
 
 (enable-console-print!)
+
+(defonce fonts
+  [(font/install-google-font-stylesheet! "http://fonts.googleapis.com/css?family=Amatic+SC")])
+
 
 (println "Edits to this text should show up in your developer console.")
 
