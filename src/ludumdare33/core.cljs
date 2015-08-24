@@ -120,22 +120,22 @@
 (def abundance
   {
    :grass1 100
-   :grass2 300
-   :grass3 300
-   :grass4 400
-   :grass5 500
-   :grass6 500
+   :grass2 1000
+   :grass3 1000
+   :grass4 1000
+   :grass5 1000
+   :grass6 1000
 
    :rock 200
-   :rock2 20
-   :tree1 10
-   :tree2 50})
+   :rock2 200
+   :tree1 100
+   :tree2 500})
 
 (def level
   (into []
         (apply concat (for [[prop num] abundance]
-                   (take num (repeatedly (fn [] [prop [(math/rand-between -10000 10000)
-                                                       (math/rand-between -1000 1000)]])))
+                   (take num (repeatedly (fn [] [prop [(math/rand-between -5000 5000)
+                                                       (math/rand-between -5000 5000)]])))
                    ))))
 
 
@@ -188,6 +188,7 @@
 (defonce player-atom (atom {:pos (vec2/zero)
                             :eating 0}))
 
+(defonce sheep-atom (atom #{}))
 
 (defn depth-compare [a b]
   (cond
@@ -259,70 +260,104 @@
                           )]
 
                   (loop []
-                    (let [disp (vec2/sub (vec2/zero) (:pos @player-atom))
+                    (let [sheep-pos (map (fn [spr] (vec2/vec2 (.-position.x spr)
+                                                              (.-position.y spr)))
+                                         @sheep-atom)
+                          sheepies @sheep-atom
+                          player-pos (:pos @player-atom)
+
+                          disp (if (= 0 (count sheep-pos))
+                                 (:pos @player-atom)
+
+                                 ;; minimum sheep distance
+                                 (do
+                                   (log "MSD")
+                                   (let [msd
+                                         (first (sort-by first (for [sh sheep-pos] [(vec2/distance player-pos sh) sh])))
+                                         [dist spos] msd
+                                        ]
+                                     (log (str dist) ": [" (aget spos 1) "," (aget spos 2) "]")
+                                     (vec2/sub (second msd) player-pos))))
                           sw (.-innerWidth js/window)
                           sh (.-innerHeight js/window)
                           hw (/ sw 2)
                           hh (/ sh 2)
                           x (vec2/get-x disp)
                           y (vec2/get-y disp)
-                          sector
-                          (if (> x hw)
-                            ;;right
-                            (if (> y hh)
-                              :bottom-right
-                              (if (< y (- hh))
-                                :top-right
-                                :right))
-
-                            (if (< x (- hw))
-                              ;; left
-                              (if (> y hh)
-                                :bottom-left
-                                (if (< y (- hh))
-                                  :top-left
-                                  :left))
-
-                              ;;above/below
-                              (if (> y hh)
-                                :bottom
-                                (if (< y (- hh))
-                                  :top
-                                  :onscreen))))
                           buff 24
+                          fhw (- hw buff)
+                          fhh (- hh buff)
+                          m (/ fhh fhw)
+                          pos (or
+                               (if (> x fhw)
+                                 (if
+                                     (and
+                                      (> y (* (- m) x))
+                                      (< y (* m x)))
+                                   (let [m2 (/ y x)]
+                                     [fhw (* m2 fhw) :right])))
+                               (if (< x (- fhw))
+                                 (if
+                                     (and
+                                      (> y (* m x))
+                                      (< y (* (- m) x)))
+                                   (let [m2 (/ y x)]
+                                     [(- fhw) (* m2 (- fhw)) :left])))
+                               (if (> y fhh)
+                                 (if (and  (> x (/ y (- m)))
+                                           (< x (/ y m)))
+                                   (let [m2 (/ x y)]
+                                     [(* m2 fhh) fhh :down])))
+                               (if (< y (- fhh))
+                                 (if (and  (> x (/ y m))
+                                           (< x (/ y (- m))))
+                                   (let [m2 (/ x y)]
+                                     [(* m2 (- fhh)) (- fhh) :up]))
+                                 )
+                               )
+                          [x y frame] pos
                           ]
-                      (case sector
-                        :top-right
-                        (do (sprite/set-pos! arrow (vec2/vec2 (- hw buff) (- buff hh)))
-                            (sprite/set-texture! arrow (-> arrow-tex :up-right)))
+                      (do (if pos
+                            (do
+                              (sprite/set-pos! arrow x y)
+                              (sprite/set-alpha! arrow 1.0)
+                              (sprite/set-texture! arrow (-> arrow-tex frame))
+                              )
+                            (sprite/set-alpha! arrow 0.0))
+                          )
 
-                        :top-left
-                        (do (sprite/set-pos! arrow (vec2/vec2 (- buff hw) (- buff hh)))
-                            (sprite/set-texture! arrow (-> arrow-tex :up-left)))
+                      #_ (case sector
+                           :top-right
+                           (do (sprite/set-pos! arrow (vec2/vec2 (- hw buff) (- buff hh)))
+                               (sprite/set-texture! arrow (-> arrow-tex :up-right)))
 
-
-                        :bottom-left
-                        (do (sprite/set-pos! arrow (vec2/vec2 (- buff hw) (- hh buff)))
-                            (sprite/set-texture! arrow (-> arrow-tex :down-left)))
-
-                        :bottom-right
-                        (do (sprite/set-pos! arrow (vec2/vec2 (- hw buff) (- hh buff)))
-                            (sprite/set-texture! arrow (-> arrow-tex :down-right)))
-
-                        :left
-                        (do (sprite/set-pos! arrow (-> disp vec2/unit (vec2/scale hw) (vec2/add (vec2/vec2 buff 0))))
-                            (sprite/set-texture! arrow (-> arrow-tex :left)))
+                           :top-left
+                           (do (sprite/set-pos! arrow (vec2/vec2 (- buff hw) (- buff hh)))
+                               (sprite/set-texture! arrow (-> arrow-tex :up-left)))
 
 
-                        (sprite/set-pos! arrow disp))
-                      (log (str sector))
+                           :bottom-left
+                           (do (sprite/set-pos! arrow (vec2/vec2 (- buff hw) (- hh buff)))
+                               (sprite/set-texture! arrow (-> arrow-tex :down-left)))
+
+                           :bottom-right
+                           (do (sprite/set-pos! arrow (vec2/vec2 (- hw buff) (- hh buff)))
+                               (sprite/set-texture! arrow (-> arrow-tex :down-right)))
+
+                           :left
+                           (do (sprite/set-pos! arrow (-> disp vec2/unit (vec2/scale hw) (vec2/add (vec2/vec2 buff 0))))
+                               (sprite/set-texture! arrow (-> arrow-tex :left)))
+
+
+                           (sprite/set-pos! arrow disp))
+                                        ;(log (str sector))
                       )
                     (<! (events/next-frame))
                     (recur))))
 
               (<! (resources/fadein player :duration 0.5))
 
-              (go (dotimes [n 10]
+              (go (dotimes [n 20]
                     (<! (events/wait-time 200))
 
                     ;; spawn a sheep
@@ -333,7 +368,8 @@
                                                    :scale scale
                                                    :xhandle 0.5
                                                    :yhandle 0.9)]
-                        (loop [[pos alive] [(vec2/scale (vec2/random) 1000) true]]
+                        (swap! sheep-atom conj sheep)
+                        (loop [[pos alive] [(vec2/scale (vec2/random) 3000) true]]
                           (when alive
                             (let [ch (bounce-sheep
                                       pos
@@ -353,6 +389,7 @@
                                           (vec2/distance pos (:pos @player-atom))
                                           20)
                                        (log "Sheep caught")
+                                       (swap! sheep-atom disj sheep)
                                        (sprite/set-texture! sheep (-> sheep-tex dir :dead))
                                        (swap! player-atom update-in [:eating] inc)
                                        (<! (events/wait-time 10000))
@@ -361,7 +398,9 @@
 
 
                                      (recur (<! ch) pos))
-                                   [pos true]))))))))))
+                                   [pos true]))))))
+
+))))
 
               ;; run game
               (loop [pos (vec2/zero)
