@@ -53,14 +53,14 @@
 
 (def player-frames
   {
-   :left [[128 8] [128 32] [128 56] [128 80]]
-   :down-left [[160 8] [160 40] [160 72] [160 104]]
-   :down [[192 8] [192 40] [192 72] [192 104]]
-   :down-right [[224 8] [224 40] [224 72] [224 104]]
-   :right [[256 8] [256 32] [256 56] [256 80]]
-   :up-right [[288 8] [288 40] [288 72] [288 104]]
-   :up [[320 8] [320 40] [320 72] [320 104]]
-   :up-left [[352 8] [352 40] [352 72] [352 104]]
+   :left [[128 8] [128 32] [128 56] [128 80] [128 104] [128 128]]
+   :down-left [[160 8] [160 40] [160 72] [160 104] [160 136] [160 168]]
+   :down [[192 8] [192 40] [192 72] [192 104] [192 136] [192 168]]
+   :down-right [[224 8] [224 40] [224 72] [224 104] [224 136] [224 168]]
+   :right [[256 8] [256 32] [256 56] [256 80] [256 104] [256 128]]
+   :up-right [[288 8] [288 40] [288 72] [288 104] [288 136] [288 168]]
+   :up [[320 8] [320 40] [320 72] [320 104] [320 136] [320 168]]
+   :up-left [[352 8] [352 40] [352 72] [352 104] [352 136] [352 168]]
 
 })
 
@@ -82,13 +82,23 @@
     :munch1 [224 360]
     :minch2 [224 384]
     :dead  [224 408]}
-   })
+
+   :blood
+   {0 [256 264]
+    1 [256 288]
+    2 [256 312]
+    3 [245 336]}
+   }
+
+
+  )
+
 
 
 (def game-props
   {
    :tree1 [[72 120] [48 48]]
-   :tree2 [[160 152] [64 104]]
+   :tree2 [[384 152] [64 104]]
    :rock [[16 160] [8 8]]
    :rock2 [[24 160] [16 8]]
    :grass1 [[16 168] [8 8]]
@@ -131,15 +141,10 @@
             [prop-name
              (texture/sub-texture spritesheet pos size)]))))
 
-
-(defn depth-compare [a b]
-  (cond
-    (< (.-position.y a) (.-position.y b)) -1
-    (< (.-position.y b) (.-position.y a)) 1
-    :default 0))
-
 (def bounce-length 120)
 (def bounce-height 40)
+
+(def sheep-atom (atom #{}))
 
 (defn bounce-sheep [pos unit]
   (let [c (chan)
@@ -174,7 +179,16 @@
               (close! c))))))
     c))
 
-(defonce player-atom (atom {:pos (vec2/zero)}))
+(defonce player-atom (atom {:pos (vec2/zero)
+                            :eating 0}))
+
+
+(defn depth-compare [a b]
+  (cond
+    (< (.-position.y a) (.-position.y b)) -1
+    (< (.-position.y b) (.-position.y a)) 1
+    :default 0
+    ))
 
 (defn main []
   (go
@@ -220,7 +234,7 @@
             ;; make player
             (macros/with-sprite canvas :world
               [player (sprite/make-sprite (-> player-tex :left first) :scale scale
-                                          :xhandle 0.5 :yhandle 0.7)]
+                                          :xhandle 0.5 :yhandle 0.8)]
 
               (<! (resources/fadein player :duration 0.5))
 
@@ -234,8 +248,8 @@
                         [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
                                                    :scale scale
                                                    :xhandle 0.5
-                                                   :yhandle 1.0)]
-                        (loop [[pos alive] [(vec2/zero) true]]
+                                                   :yhandle 0.9)]
+                        (loop [[pos alive] [(vec2/scale (vec2/random) 1000) true]]
                           (when alive
                             (let [ch (bounce-sheep
                                       pos
@@ -256,7 +270,7 @@
                                           20)
                                        (log "Sheep caught")
                                        (sprite/set-texture! sheep (-> sheep-tex dir :dead))
-                                       (swap! player-atom assoc :eating sheep)
+                                       (swap! player-atom update-in [:eating] inc)
                                        (<! (events/wait-time 10000))
                                        (<! (resources/fadeout sheep :duration 60))
                                        [pos false])
@@ -273,11 +287,7 @@
                       x (aget next-pos 0)
                       y (aget next-pos 1)]
 
-                  (when (:eating @player-atom)
-                    ;; eating
-                    (<! (events/wait-time 1000))
-                    (swap! player-atom dissoc :eating)
-                    (recur pos (vec2/zero) n))
+
 
                   (sprite/set-pivot! (-> canvas :layer :world)  x y)
                   (sprite/set-pos! player x y)
@@ -298,9 +308,56 @@
 
 
                         ]
+
+
+
+                    (when (> (:eating @player-atom) 0)
+                      ;;
+                      ;; eating
+                      ;;
+                      ;(sprite/set-pos! player (vec2/sub (vec2/vec2 x y) (vec2/zero))
+
+                      (loop [n 10]
+                        (go
+                          (macros/with-sprite canvas :ui
+                            [blood (sprite/make-sprite ((-> sheep-tex :blood) 0)
+                                                       :scale scale
+                                                       :x 0
+                                                       :y 0
+                                                       :xhandle 0.5
+                                                       :yhandle 1.1)]
+
+                            (loop [n 1]
+                              (<! (events/wait-time 100))
+                              (sprite/set-texture! blood ((-> sheep-tex :blood) n))
+                              (when (< n 3) (recur (inc n))))))
+
+                        (sprite/set-texture! player
+                                             (nth (-> player-tex frame) 4))
+                        (<! (events/wait-time (math/rand-between 100 400)))
+                        (sprite/set-texture! player
+                                             (nth (-> player-tex frame) 5))
+                        (<! (events/wait-time (math/rand-between 100 400)))
+                        (when (pos? n)
+                          (recur (dec n)))
+
+
+
+)
+
+
+                      ;(<! (events/wait-time 1000))
+                      (swap! player-atom update-in [:eating] dec)
+                      (recur (vec2/vec2 x y) (vec2/scale (vec2/unit vel) 0.2) n))
+
+
+
                     (sprite/set-texture! player (nth
                                                  (-> player-tex frame)
-                                                 (mod (int (* 0.02 n)) (-> player-tex frame count)))))
+                                                 (mod (int (* 0.02 n)) 4))))
+
+
+
 
                   (.sort (.-children (-> canvas :layer :world)) depth-compare )
                   (<! (events/next-frame))
