@@ -535,15 +535,18 @@
                                                        :yhandle 1.1)]
 
                             (loop [n 1]
+                              (.sort (.-children (-> canvas :layer :world)) depth-compare )
                               (<! (events/wait-time 100))
                               (sprite/set-texture! blood ((-> sheep-tex :blood) n))
                               (when (< n 3) (recur (inc n))))))
 
                         (sprite/set-texture! player
                                              (nth (-> player-tex frame) 4))
+                        (.sort (.-children (-> canvas :layer :world)) depth-compare )
                         (<! (events/wait-time (math/rand-between 100 400)))
                         (sprite/set-texture! player
                                              (nth (-> player-tex frame) 5))
+                        (.sort (.-children (-> canvas :layer :world)) depth-compare )
                         (<! (events/wait-time (math/rand-between 100 400)))
                         (when (pos? n)
                           (recur (dec n))))
