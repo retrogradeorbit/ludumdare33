@@ -477,50 +477,14 @@
 
               (<! (resources/fadein player :duration 0.5))
 
-              (go (dotimes [n 20]
+              (go
+
+                (dotimes [n num-sheep-start]
                     (<! (events/wait-time 200))
 
                     ;; spawn a sheep
-                    (go
-
-                      (macros/with-sprite canvas :world
-                        [sheep (sprite/make-sprite (-> sheep-tex :left :stand)
-                                                   :scale scale
-                                                   :xhandle 0.5
-                                                   :yhandle 0.9)]
-                        (swap! sheep-atom conj sheep)
-                        (loop [[pos alive] [(vec2/scale (vec2/random) 3000) true]]
-                          (when alive
-                            (let [ch (bounce-sheep
-                                      pos
-                                      (vec2/random-unit)
-                                      )]
-                              (recur
-                               (loop [nex (<! ch) pos pos]
-                                 (if nex
-                                   (let [[pos dir frame] nex]
-                                     (sprite/set-pos! sheep pos)
-                                     (sprite/set-texture! sheep (-> sheep-tex dir frame))
-                                     (<! (events/next-frame))
-
-                                     ;; collision with player?
-                                     (when
-                                         (<
-                                          (vec2/distance pos (:pos @player-atom))
-                                          20)
-                                       (log "Sheep caught")
-                                       (swap! sheep-atom disj sheep)
-                                       (sprite/set-texture! sheep (-> sheep-tex dir :dead))
-                                       (swap! player-atom update-in [:eating] inc)
-                                       (<! (events/wait-time 10000))
-                                       (<! (resources/fadeout sheep :duration 60))
-                                       [pos false])
-
-
-                                     (recur (<! ch) pos))
-                                   [pos true]))))))
-
-))))
+                    (spawn-sheep sheep-tex sfx-cute sfx-growl)
+                    ))
 
               ;; run game
               (loop [pos (vec2/zero)
