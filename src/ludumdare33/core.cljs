@@ -52,8 +52,7 @@
   (into []
         (apply concat (for [[prop num] assets/abundance]
                    (take num (repeatedly (fn [] [prop [(math/rand-between -5000 5000)
-                                                       (math/rand-between -5000 5000)]])))
-                   ))))
+                                                       (math/rand-between -5000 5000)]])))))))
 
 (defn make-prop-texture-lookup [props]
   (let [spritesheet (resources/get-texture :sprites :nearest)]
@@ -413,19 +412,13 @@
                         frame
                         ([:right :down-right :down :down-left
                           :left :up-left :up :up-right :right]
-                         section)
-
-
-                        ]
-
-
+                         section)]
 
                     (when (> (:eating @player-atom) 0)
                       ;;
                       ;; eating
                       ;;
-                                        ;(sprite/set-pos! player (vec2/sub (vec2/vec2 x y) (vec2/zero))
-
+                      ;(sprite/set-pos! player (vec2/sub (vec2/vec2 x y) (vec2/zero))
                       (loop [n 10]
                         (go
                           (macros/with-sprite canvas :ui
