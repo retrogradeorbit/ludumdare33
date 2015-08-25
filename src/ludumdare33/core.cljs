@@ -9,6 +9,7 @@
      [infinitelives.utils.math :as math]
      [infinitelives.utils.vec2 :as vec2]
      [ludumdare33.sound :as sound]
+     [ludumdare33.assets :as assets]
      [ludumdare33.font :as font]
      [cljs.core.async :refer [<! chan >! close! timeout]])
     (:require-macros
@@ -55,7 +56,7 @@
 
 (def level
   (into []
-        (apply concat (for [[prop num] abundance]
+        (apply concat (for [[prop num] assets/abundance]
                    (take num (repeatedly (fn [] [prop [(math/rand-between -5000 5000)
                                                        (math/rand-between -5000 5000)]])))
                    ))))
@@ -226,19 +227,19 @@
 
 
           player-tex (into {}
-                           (for [[k v] player-frames]
+                           (for [[k v] assets/player-frames]
                              [k (doall (map
                                         #(texture/sub-texture spritesheet
                                                               %
                                                               [24 24])
                                         v))]))
           arrow-tex (into {}
-                          (for [[k v] arrows]
+                          (for [[k v] assets/arrows]
                             [k (texture/sub-texture spritesheet v [24 24])]))
 
           sheep-tex (into
                      {}
-                     (for [[k v] sheep-frames]
+                     (for [[k v] assets/sheep-frames]
                        [k (into
                            {}
                            (for [[kk pos] v]
@@ -268,7 +269,7 @@
                   (recur))))))
 
       (go
-        (let [props (make-prop-texture-lookup game-props)]
+        (let [props (make-prop-texture-lookup assets/game-props)]
           ;; make world
           (macros/with-sprite-set canvas :world
             [sprites (doall (for [[prop [x y]] level]
