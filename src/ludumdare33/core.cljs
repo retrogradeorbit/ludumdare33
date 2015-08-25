@@ -44,7 +44,9 @@
                ((:render-fn canvas)))))
 
 (def player-run-anim-delay 7)
-
+(def bounce-length 120)
+(def bounce-height 40)
+(def num-sheep-start 10)
 
 (def level
   (into []
@@ -60,9 +62,6 @@
             [prop-name
              (texture/sub-texture spritesheet pos size)]))))
 
-(def bounce-length 120)
-(def bounce-height 40)
-(def num-sheep-start 10)
 (defn bounce-sheep [pos unit]
   (let [c (chan)
         time 20]
