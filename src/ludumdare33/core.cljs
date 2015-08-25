@@ -61,10 +61,6 @@
                                                        (math/rand-between -5000 5000)]])))
                    ))))
 
-
-(println "LEVEL:")
-(println level)
-
 (defn make-prop-texture-lookup [props]
   (let [spritesheet (resources/get-texture :sprites :nearest)]
     (into {}
