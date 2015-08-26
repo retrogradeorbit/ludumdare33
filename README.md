@@ -1,10 +1,22 @@
 # ludumdare33
 
-FIXME: Write a one-line description of your library/project.
+An entry to ludumdare 33. Theme was "You are the Monster".
+
+Play it here
+
+http://ld33.procrustes.net
 
 ## Overview
 
-FIXME: Write a paragraph about the library/project and highlight its goals.
+Use cursor keys to control your monster. Eat as many sheep as you can.
+
+## Prerequisites
+
+You need to install infinitelives.utils and infinitelives.pixi to build and run this.
+
+Go to infinitelives.utils checkout. Do a lein install.
+
+Go to infinitelives.pixi checkout. Do a lein install.
 
 ## Setup
 
@@ -30,10 +42,10 @@ To create a production build run:
     lein cljsbuild once min
 
 And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL. 
+get live reloading, nor a REPL.
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2015 Crispin Wellington
 
-Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
+Distributed under the Eclipse Public License version 1.0.
