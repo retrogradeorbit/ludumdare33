@@ -1,6 +1,7 @@
 # ludumdare33
 
-An entry to ludumdare 33. Theme was "You are the Monster".
+An entry to ludumdare 33 game jam. HTML5 game playable in the browser
+written in clojurescript. Theme was "You are the Monster".
 
 Play it here
 
@@ -12,7 +13,8 @@ Use cursor keys to control your monster. Eat as many sheep as you can.
 
 ## Prerequisites
 
-You need to install infinitelives.utils and infinitelives.pixi to build and run this.
+You need to install infinitelives.utils and infinitelives.pixi to
+build and run this.
 
 Go to infinitelives.utils checkout. Do a lein install.
 
