@@ -18,7 +18,17 @@ build and run this.
 
 Go to infinitelives.utils checkout. Do a lein install.
 
+    git clone git@github.com:infinitelives/infinitelives.utils.git
+    cd infinitelives.utils
+    lein cljsbuild test
+    lein install
+
 Go to infinitelives.pixi checkout. Do a lein install.
+
+    git clone git@github.com:infinitelives/infinitelives.pixi.git
+    cd infinitelives.pixi
+    lein cljsbuild test
+    lein install
 
 ## Setup
 
