@@ -14,7 +14,8 @@ Use cursor keys to control your monster. Eat as many sheep as you can.
 ## Prerequisites
 
 You need to install infinitelives.utils and infinitelives.pixi to
-build and run this.
+build and run this. These libraries are very new and not on clojars so
+you will have to manually install them.
 
 Go to infinitelives.utils checkout. Do a lein install.
 
