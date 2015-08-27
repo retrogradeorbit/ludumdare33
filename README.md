@@ -32,6 +32,10 @@ Go to infinitelives.pixi checkout. Do a lein install.
 
 ## Setup
 
+Build the graphics and sound sets with:
+
+    make sfx images
+
 To get an interactive development environment run:
 
     lein figwheel
